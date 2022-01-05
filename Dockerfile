@@ -56,6 +56,8 @@ RUN wget -P ${SONARQUBE_HOME}/extensions/plugins/ https://github.com/mc1arke/son
 ENV SONAR_WEB_JAVAADDITIONALOPTS=-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-1.10.0.jar=web
 ENV SONAR_CE_JAVAADDITIONALOPTS=-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-1.10.0.jar=ce
 
+RUN wget -P ${SONARQUBE_HOME}/extensions/plugins/ https://github.com/dependency-check/dependency-check-sonar-plugin/releases/download/2.0.8/sonar-dependency-check-plugin-2.0.8.jar
+
 
 WORKDIR ${SONARQUBE_HOME}
 EXPOSE 9000
