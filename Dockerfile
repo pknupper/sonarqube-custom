@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.14.5
 
 ENV LANG='en_US.UTF-8' \
     LANGUAGE='en_US:en' \
@@ -7,7 +7,7 @@ ENV LANG='en_US.UTF-8' \
 #
 # SonarQube setup
 #
-ARG SONARQUBE_VERSION=9.2.4.50792
+ARG SONARQUBE_VERSION=9.4.0.54424
 ARG SONARQUBE_ZIP_URL=https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-${SONARQUBE_VERSION}.zip
 ENV JAVA_HOME='/usr/lib/jvm/java-11-openjdk' \
     PATH="/opt/java/openjdk/bin:$PATH" \
@@ -29,11 +29,8 @@ RUN set -eux; \
     # sub   2048R/06855C1D 2015-05-25
     echo "networkaddress.cache.ttl=5" >> "${JAVA_HOME}/conf/security/java.security"; \
     sed --in-place --expression="s?securerandom.source=file:/dev/random?securerandom.source=file:/dev/urandom?g" "${JAVA_HOME}/conf/security/java.security"; \
-    for server in $(shuf -e ha.pool.sks-keyservers.net \
-                            hkp://p80.pool.sks-keyservers.net:80 \
-                            keyserver.ubuntu.com \
-                            hkp://keyserver.ubuntu.com:80 \
-                            pgp.mit.edu) ; do \
+    for server in $(shuf -e hkps://keys.openpgp.org \
+                            hkps://keyserver.ubuntu.com) ; do \
         gpg --batch --keyserver "${server}" --recv-keys 679F1EE92B19609DE816FDE81DB198F93525EC1A && break || : ; \
     done; \
     mkdir --parents /opt; \
@@ -49,14 +46,15 @@ RUN set -eux; \
     # this 777 will be replaced by 700 at runtime (allows semi-arbitrary "--user" values)
     chmod -R 777 "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
     apk del --purge build-dependencies;
+
 COPY --chown=sonarqube:sonarqube run.sh sonar.sh ${SONARQUBE_HOME}/bin/
 
 # pre-install plugins
-RUN wget -P ${SONARQUBE_HOME}/extensions/plugins/ https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.10.0/sonarqube-community-branch-plugin-1.10.0.jar
-ENV SONAR_WEB_JAVAADDITIONALOPTS=-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-1.10.0.jar=web
-ENV SONAR_CE_JAVAADDITIONALOPTS=-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-1.10.0.jar=ce
+RUN wget -P ${SONARQUBE_HOME}/extensions/plugins/ https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.11.0/sonarqube-community-branch-plugin-1.11.0.jar
+ENV SONAR_WEB_JAVAADDITIONALOPTS=-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-1.11.0.jar=web
+ENV SONAR_CE_JAVAADDITIONALOPTS=-javaagent:${SONARQUBE_HOME}/extensions/plugins/sonarqube-community-branch-plugin-1.11.0.jar=ce
 
-RUN wget -P ${SONARQUBE_HOME}/extensions/plugins/ https://github.com/dependency-check/dependency-check-sonar-plugin/releases/download/2.0.8/sonar-dependency-check-plugin-2.0.8.jar
+RUN wget -P ${SONARQUBE_HOME}/extensions/plugins/ https://github.com/dependency-check/dependency-check-sonar-plugin/releases/download/3.0.1/sonar-dependency-check-plugin-3.0.1.jar
 
 RUN chmod +x /opt/sonarqube/bin/run.sh
 RUN chmod +x /opt/sonarqube/bin/sonar.sh
